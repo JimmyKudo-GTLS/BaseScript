@@ -33,10 +33,10 @@ CREATE TABLE `users` (
   `Name` varchar(25) NOT NULL,
   `Password` varchar(255) NOT NULL,
   `Registered_At` timestamp NULL DEFAULT current_timestamp(),
-  `PosX` float DEFAULT NULL,
-  `PosY` float DEFAULT NULL,
-  `PosZ` float DEFAULT NULL,
-  `Rot` float DEFAULT 90,
+  `PosX` float DEFAULT 1527.85,
+  `PosY` float DEFAULT -1675.35,
+  `PosZ` float DEFAULT 13.3828,
+  `Rot` float DEFAULT 270,
   `Skin` int(11) NOT NULL DEFAULT 1,
   `Level` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

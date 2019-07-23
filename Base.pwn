@@ -70,26 +70,19 @@ public OnPlayerConnect(playerid)
 
 public OnPlayerDisconnect(playerid, reason)
 {
-	new query[128], pname[MAX_PLAYER_NAME], Float:px, Float:py, Float:pz, Float:rot;
+	new query[256], pname[MAX_PLAYER_NAME], Float:px, Float:py, Float:pz, Float:rot;
  	GetPlayerName(playerid, pname, sizeof(pname));
 	GetPlayerPos(playerid, px, py, pz);
 	GetPlayerFacingAngle(playerid, rot);
 	mysql_format(handle, query, sizeof(query), "UPDATE `Users` set PosX = %f, PosY = %f, PosZ = %f, Rot = %f, Skin = %d, Level = %d WHERE Master_ID = %d", px, py, pz, rot, pInfo[playerid][Skin], pInfo[playerid][Level], pInfo[playerid][MasterID]);
 	mysql_query(handle, query);
-	printf("Saved %s's position", pname);
+	printf("Saved %s's data", pname);
 	return 1;
 }
 
 public OnPlayerSpawn(playerid)
 {
     //Set your spawn info here...
-	SetPlayerPos(playerid, pInfo[playerid][PX], pInfo[playerid][PY], pInfo[playerid][PZ]);
-	SetPlayerCameraPos(playerid, pInfo[playerid][PX], pInfo[playerid][PY], pInfo[playerid][PZ]);
-	SetPlayerCameraLookAt(playerid, pInfo[playerid][PX], pInfo[playerid][PY], pInfo[playerid][PZ]);
-
-	new name[64];
-    format(name, sizeof(name), "{00FF22}Welcome to the server, {FFFFFF}%s", name);
-	SendClientMessage(playerid, -1, name);
 	return 1;
 }
 
@@ -181,21 +174,31 @@ public OnPassCheck(playerid, DBID)
 
 SetPlayerInfo(playerid, dbid)
 {
-	new query[65];
+	new query[128];
 	mysql_format(handle, query, sizeof(query), "SELECT  PosX, PosY, PosZ, Rot, Skin, Level FROM USERS WHERE Master_ID = %d LIMIT 1", dbid);
 	new Cache:result = mysql_query(handle, query);
 	
-	cache_get_value_index_float(0, 1, pInfo[playerid][PX]);
-	cache_get_value_index_float(0, 2, pInfo[playerid][PY]);
-	cache_get_value_index_float(0, 3, pInfo[playerid][PZ]);
-	cache_get_value_index_float(0, 4, pInfo[playerid][Rot]);
-	cache_get_value_index_int(0, 5, pInfo[playerid][Skin]);
-	cache_get_value_index_int(0, 6, pInfo[playerid][Level]);
+	cache_get_value_index_float(0, 0, pInfo[playerid][PX]);
+	cache_get_value_index_float(0, 1, pInfo[playerid][PY]);
+	cache_get_value_index_float(0, 2, pInfo[playerid][PZ]);
+	cache_get_value_index_float(0, 3, pInfo[playerid][Rot]);
+	cache_get_value_index_int(0, 4, pInfo[playerid][Skin]);
+	cache_get_value_index_int(0, 5, pInfo[playerid][Level]);
 	
 	cache_delete(result);
 	
 	SetPlayerScore(playerid, pInfo[playerid][Level]);
 	SetSpawnInfo(playerid, 0, pInfo[playerid][Skin], pInfo[playerid][PX], pInfo[playerid][PY], pInfo[playerid][PZ],pInfo[playerid][Rot], 0, 0, 0, 0, 0, 0);
+
+	TogglePlayerSpectating(playerid, false);
+	TogglePlayerControllable(playerid, true);
+
+	new name[MAX_PLAYER_NAME], str[80];
+	GetPlayerName(playerid, name, sizeof(name));
+	format(str, sizeof(str), "{00FF22}Welcome to the server, {FFFFFF}%s", name);
+	SendClientMessage(playerid, -1, str);
+
 	SpawnPlayer(playerid);
 	return 1;
 }
+
