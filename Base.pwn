@@ -12,7 +12,7 @@
 //Default Username is root and password is blank. You still gotta define them
 //Make sure to install XAMPP server. Start Apache and MySQL service when you start the server. You can manage SQL databases from PHPMyAdmin which comes in built in XAMPP.
 
-enum DIALOG_IDs //Always use some kind of structure for Dialog IDs.
+enum//Always use some kind of structure for Dialog IDs.
 {
 	DIALOG_ASK,
 	DIALOG_REGISTER,
