@@ -58,9 +58,9 @@ public OnGameModeInit()
 
 public OnGameModeExit()
 {
-	foreach(new i : Players)
+	foreach(new i : Player)
 	{
-		if(PInfo[i][LoggedIn]) SavePlayerData(i);
+		if(pInfo[i][LoggedIn]) SavePlayerData(i);
 	}
 	mysql_close(handle);
 	return 1;
