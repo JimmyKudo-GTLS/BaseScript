@@ -1,6 +1,7 @@
 #include <a_samp>
 #include <a_mysql> // Currently its R41-4.
 #include <bcrypt> //Bcrypt is the best way of encrypting passwords.
+#include <foreach> //foreach standalone version
 
 //Defining MySQL stuff here
 
@@ -12,7 +13,7 @@
 //Default Username is root and password is blank. You still gotta define them
 //Make sure to install XAMPP server. Start Apache and MySQL service when you start the server. You can manage SQL databases from PHPMyAdmin which comes in built in XAMPP.
 
-enum//Always use some kind of structure for Dialog IDs.
+enum //Always use some kind of structure for Dialog IDs.
 {
 	DIALOG_ASK,
 	DIALOG_REGISTER,
@@ -27,7 +28,9 @@ enum pinfo
 	Float:PZ,
 	Float:Rot,
 	Skin,
-	Level
+	Level,
+	
+	bool:LoggedIn
 };
 new pInfo[MAX_PLAYERS][pinfo];
 
@@ -55,6 +58,11 @@ public OnGameModeInit()
 
 public OnGameModeExit()
 {
+	foreach(new i : Players)
+	{
+		if(PInfo[i][LoggedIn]) SavePlayerData(i);
+	}
+	mysql_close(handle);
 	return 1;
 }
 
@@ -70,6 +78,18 @@ public OnPlayerConnect(playerid)
 
 public OnPlayerDisconnect(playerid, reason)
 {
+	if(pInfo[playerid][LoggedIn]) SavePlayerData(playerid);
+	return 1;
+}
+
+public OnPlayerSpawn(playerid)
+{
+    //Set your spawn info here...
+	return 1;
+}
+
+SavePlayerData(playerid)
+{
 	new query[256], pname[MAX_PLAYER_NAME], Float:px, Float:py, Float:pz, Float:rot;
  	GetPlayerName(playerid, pname, sizeof(pname));
 	GetPlayerPos(playerid, px, py, pz);
@@ -80,11 +100,6 @@ public OnPlayerDisconnect(playerid, reason)
 	return 1;
 }
 
-public OnPlayerSpawn(playerid)
-{
-    //Set your spawn info here...
-	return 1;
-}
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
@@ -185,6 +200,8 @@ SetPlayerInfo(playerid, dbid)
 	cache_get_value_index_int(0, 4, pInfo[playerid][Skin]);
 	cache_get_value_index_int(0, 5, pInfo[playerid][Level]);
 	
+	pInfo[playerid][LoggedIn] = true;
+	
 	cache_delete(result);
 	
 	SetPlayerScore(playerid, pInfo[playerid][Level]);
@@ -201,4 +218,3 @@ SetPlayerInfo(playerid, dbid)
 	SpawnPlayer(playerid);
 	return 1;
 }
-
