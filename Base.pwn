@@ -79,6 +79,7 @@ public OnPlayerConnect(playerid)
 public OnPlayerDisconnect(playerid, reason)
 {
 	if(pInfo[playerid][LoggedIn]) SavePlayerData(playerid);
+	pInfo[playerid][LoggedIn] = false;
 	return 1;
 }
 
