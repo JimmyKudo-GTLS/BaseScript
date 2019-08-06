@@ -45,7 +45,7 @@ public OnGameModeInit()
 {
 	handle = mysql_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 	
-	if(mysql_errno() == 0) printf("[MYSQL] Connection successful"); //returns number of errors. 0 means no errors..
+	if(mysql_errno(handle) == 0) printf("[MYSQL] Connection successful"); //returns number of errors. 0 means no errors..
 	else
 	{
 	    new error[100];
@@ -71,7 +71,7 @@ public OnPlayerConnect(playerid)
 	new query[64];
 	new pname[MAX_PLAYER_NAME];
 	GetPlayerName(playerid, pname, sizeof(pname));
-	mysql_format(handle, query, sizeof(query), "SELECT * from `Users` where Name = '%s' ", pname);
+	mysql_format(handle, query, sizeof(query), "SELECT COUNT(Name) from `users` where Name = '%s' ", pname);
 	mysql_tquery(handle, query, "OnPlayerJoin", "d", playerid);
 	return 1;
 }
@@ -95,7 +95,7 @@ SavePlayerData(playerid)
  	GetPlayerName(playerid, pname, sizeof(pname));
 	GetPlayerPos(playerid, px, py, pz);
 	GetPlayerFacingAngle(playerid, rot);
-	mysql_format(handle, query, sizeof(query), "UPDATE `Users` set PosX = %f, PosY = %f, PosZ = %f, Rot = %f, Skin = %d, Level = %d WHERE Master_ID = %d", px, py, pz, rot, pInfo[playerid][Skin], pInfo[playerid][Level], pInfo[playerid][MasterID]);
+	mysql_format(handle, query, sizeof(query), "UPDATE `users` set PosX = %f, PosY = %f, PosZ = %f, Rot = %f, Skin = %d, Level = %d WHERE Master_ID = %d", px, py, pz, rot, pInfo[playerid][Skin], pInfo[playerid][Level], pInfo[playerid][MasterID]);
 	mysql_query(handle, query);
 	printf("Saved %s's data", pname);
 	return 1;
@@ -121,8 +121,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			{
 				new query[128], pname[MAX_PLAYER_NAME];
 				GetPlayerName(playerid, pname, sizeof(pname));
-				mysql_format(handle, query, sizeof(query), "SELECT password, Master_ID from `USERS` WHERE Name LIKE '%s'", pname);
-				mysql_tquery(handle, query, "OnPlayerLogin", "ds", playerid, inputtext);
+    			SetPVarString(playerid, "Unhashed_Pass",inputtext);
+				mysql_format(handle, query, sizeof(query), "SELECT password, Master_ID from `users` WHERE Name = '%s'", pname);
+				mysql_tquery(handle, query, "OnPlayerLogin", "d", playerid);
 			}
 			else Kick(playerid);
 		}
@@ -135,7 +136,7 @@ forward OnPlayerJoin(playerid);
 public OnPlayerJoin(playerid)
 {
 	new rows;
-	cache_get_row_count(rows);
+	cache_get_value_index_int(0, 0, rows);
 	
 	if(rows) ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "This account is found on your database. Please login", "Login", "Quit");
 
@@ -152,15 +153,16 @@ public OnPlayerRegister(playerid)
 	return 1;
 }
 
-forward OnPlayerLogin(playerid,  pass[]);
-public OnPlayerLogin(playerid,  pass[])
+forward OnPlayerLogin(playerid);
+public OnPlayerLogin(playerid)
 {
-	new pPass[255];
+	new pPass[255], unhashed_pass[128];
+	GetPVarString(playerid, "Unhashed_Pass",unhashed_pass,sizeof(unhashed_pass));
 	if(cache_num_rows())
 	{
 		cache_get_value_index(0, 0, pPass);
 		cache_get_value_index_int(0, 1, pInfo[playerid][MasterID]);
-		bcrypt_check(pass, pPass, "OnPassCheck", "dd",playerid, pInfo[playerid][MasterID]);
+		bcrypt_check(unhashed_pass, pPass, "OnPassCheck", "dd",playerid, pInfo[playerid][MasterID]);
   	}
     else printf("ERROR ");
 	return 1;
@@ -172,7 +174,7 @@ public OnPassHash(playerid)
 	new pass[BCRYPT_HASH_LENGTH], query[128], pname[MAX_PLAYER_NAME];
     GetPlayerName(playerid, pname, sizeof(pname));
     bcrypt_get_hash(pass);
-    mysql_format(handle, query, sizeof(query), "INSERT INTO `USERS`(Name, Password) VALUES('%s', '%e')", pname, pass);
+    mysql_format(handle, query, sizeof(query), "INSERT INTO `users`(Name, Password) VALUES('%s', '%e')", pname, pass);
 	mysql_tquery(handle, query, "OnPlayerRegister", "d", playerid);
 	return 1;
 }
@@ -191,7 +193,7 @@ public OnPassCheck(playerid, DBID)
 SetPlayerInfo(playerid, dbid)
 {
 	new query[128];
-	mysql_format(handle, query, sizeof(query), "SELECT  PosX, PosY, PosZ, Rot, Skin, Level FROM USERS WHERE Master_ID = %d LIMIT 1", dbid);
+	mysql_format(handle, query, sizeof(query), "SELECT  PosX, PosY, PosZ, Rot, Skin, Level FROM `users` WHERE Master_ID = %d", dbid);
 	new Cache:result = mysql_query(handle, query);
 	
 	cache_get_value_index_float(0, 0, pInfo[playerid][PX]);
@@ -215,6 +217,7 @@ SetPlayerInfo(playerid, dbid)
 	GetPlayerName(playerid, name, sizeof(name));
 	format(str, sizeof(str), "{00FF22}Welcome to the server, {FFFFFF}%s", name);
 	SendClientMessage(playerid, -1, str);
+	DeletePVar(playerid, "Unhashed_Pass");
 
 	SpawnPlayer(playerid);
 	return 1;
