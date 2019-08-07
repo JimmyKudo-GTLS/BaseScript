@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `users` (
   `Master_ID` int(11) NOT NULL,
-  `Name` varchar(25) NOT NULL,
+  `Name` varchar(25) NOT NULL UNIQUE,
   `Password` varchar(255) NOT NULL,
   `Registered_At` timestamp NULL DEFAULT current_timestamp(),
   `PosX` float DEFAULT 1527.85,
